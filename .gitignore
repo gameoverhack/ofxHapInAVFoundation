@@ -1,0 +1,17 @@
+*.mode*
+build/
+obj/
+*.o
+*.app/
+
+*.depend
+*.layout
+*.mode*v3
+*.pbxuser
+*.app*
+*.DS_*
+
+.svn/
+obj/
+bin/ofxHapInAVFoundation_exampleDebug.app
+!data/
