@@ -15,9 +15,17 @@ public:
 
     void update();
     
-    ofTexture * getTexture();
+    void draw(int x, int y, int w, int h);
+    ofTexture * getTexturePtr();
+    void initTextureCache();
 
+    float getWidth() const;
+    float getHeight() const;
+    
 private:
-    ofTexture _texture;
+    ofTexture videoTexture;
     void *hapDelegate;
+    
+    CVOpenGLTextureCacheRef _videoTextureCache = nullptr;
+    CVOpenGLTextureRef _videoTextureRef = nullptr;
 };

@@ -412,6 +412,10 @@
 	return [[[NSOpenGLPixelFormat alloc] initWithAttributes:attrs] autorelease];
 }
 
+//-------------------------------------------------------------- Josh
+- (CVImageBufferRef)getCurrentFrame {
+    return hapTexture;
+}
 
 @end
 
@@ -434,3 +438,6 @@ void pixelBufferReleaseCallback(void *releaseRefCon, const void *baseAddress)	{
 	HapDecoderFrame		*decoderFrame = (HapDecoderFrame *)releaseRefCon;
 	[decoderFrame release];
 }
+
+
+

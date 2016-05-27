@@ -34,6 +34,9 @@
 
 - (NSOpenGLPixelFormat *) createGLPixelFormat;
 
+// Josh
+- (CVImageBufferRef)getCurrentFrame;
+
 @end
 
 
