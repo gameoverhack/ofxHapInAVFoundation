@@ -14,51 +14,35 @@
 
 //----------------------------------------------------------
 void ofxHapInAVFoundation::setup(){
-    // Need pool
-    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-    
-    NSMutableArray *hapNSMutableArray;
-    // Assign our void pointer a copy of the mutable array
-    hapDelegate = hapNSMutableArray;
-    
-    hapDelegate = [[NSMutableArray alloc] init];
-    id tempHap = [[HapInAVFTestAppDelegate alloc] init];
-    
-    [tempHap awakeFromNib]; //-- Not sure if I need to call this here?
-    [hapDelegate addObject:tempHap];
-    [tempHap release];
-    
-    [pool drain];
+
+    hapDelegate = [[HapInAVFTestAppDelegate alloc] init];
+    [hapDelegate awakeFromNib]; //-- Not sure if I need to call this here?
 }
 
 //----------------------------------------------------------
 void ofxHapInAVFoundation::load(string _pathName){
-    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-
-    id tempHap = [[HapInAVFTestAppDelegate alloc] init];
-
     NSString *nsPathName = [NSString stringWithCString:_pathName.c_str() encoding:[NSString defaultCStringEncoding]];
-    [tempHap loadFileAtPath:nsPathName];
-    [hapDelegate addObject:tempHap];
-    [tempHap release];
-    
-    [pool drain];
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [hapDelegate loadFileAtPath:nsPathName];
+    });
+
 }
 
 //----------------------------------------------------------
 void ofxHapInAVFoundation::update(){
-    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
-    [hapDelegate makeObjectsPerformSelector:@selector(renderCallback)];
-    [pool drain];
+    [hapDelegate renderCallback];
 }
 
 //--------------------------------------------------------------
 void ofxHapInAVFoundation::draw(int x, int y, int w, int h) {
+
     //if(isLoaded() && isReady()) {
         
         ofTexture * texturePtr = getTexturePtr();
         if( texturePtr != NULL ){
             if( texturePtr->isAllocated() ){
+              //  cout << "hello? ? " << endl;
                 texturePtr->draw(x, y, w, h);
             }
         }
@@ -94,6 +78,7 @@ void ofxHapInAVFoundation::initTextureCache(){
     if(imageBuffer == nil) {
         return;
     }
+    
     CVPixelBufferLockBaseAddress(imageBuffer, kCVPixelBufferLock_ReadOnly);
     
     /**

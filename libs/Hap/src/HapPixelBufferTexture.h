@@ -39,10 +39,11 @@
  */
 @interface HapPixelBufferTexture : NSObject
 {
+@public
+    GLuint          textures[2];
 @private
     CGLContextObj   cgl_ctx;
     int				textureCount;
-    GLuint          textures[2];
     HapDecoderFrame		*decodedFrame;
     GLuint    backingHeights[2];
     GLuint     backingWidths[2];

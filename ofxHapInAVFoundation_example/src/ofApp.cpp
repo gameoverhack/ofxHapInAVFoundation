@@ -4,7 +4,7 @@
 void ofApp::setup(){
 
     hap.setup();
-    hap.load("/Users/josh/Desktop/Media/Kortex_VJ/JapanPowWow.mov");
+    hap.load("/Users/josh/Desktop/Media/Kortex_VJ/BUTTS.mov");
 }
 
 //--------------------------------------------------------------

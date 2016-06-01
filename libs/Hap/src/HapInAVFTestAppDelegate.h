@@ -8,11 +8,11 @@
 
 
 
-@interface HapInAVFTestAppDelegate : NSObject <NSApplicationDelegate,NSTabViewDelegate>	{
+@interface HapInAVFTestAppDelegate : NSObject {
 	CVDisplayLinkRef			displayLink;	//	this "drives" rendering
 	NSOpenGLContext				*sharedContext;	//	all GL contexts share this, so textures from one contact can be used in others
 	IBOutlet NSWindow			*window;
-	IBOutlet NSTabView			*tabView;
+	//IBOutlet NSTabView			*tabView;
 	IBOutlet GLView				*glView;
 	IBOutlet NSImageView		*imgView;
 	IBOutlet NSTextField		*statusField;
@@ -36,6 +36,8 @@
 
 // Josh
 - (CVImageBufferRef)getCurrentFrame;
+- (GLuint)getWidth;
+- (GLuint)getHeight;
 
 @end
 

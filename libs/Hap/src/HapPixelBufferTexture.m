@@ -79,6 +79,7 @@
 	CGLReleaseContext(cgl_ctx);
 	[super dealloc];
 }
+
 - (void) setDecodedFrame:(HapDecoderFrame *)newFrame	{
 	[newFrame retain];
 	
@@ -237,7 +238,7 @@
 		
 		glPopClientAttrib();
 		glPopAttrib();
-		
+        
 		glFlush();
 	}
 }

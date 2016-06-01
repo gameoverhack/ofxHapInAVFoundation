@@ -8,6 +8,10 @@
 
 #include "ofMain.h"
 
+#ifdef __OBJC__
+#import "HapInAVFTestAppDelegate.h"
+#endif
+
 class ofxHapInAVFoundation {
 public:
     void setup();
@@ -24,7 +28,12 @@ public:
     
 private:
     ofTexture videoTexture;
-    void *hapDelegate;
+    
+#ifdef __OBJC__
+    HapInAVFTestAppDelegate * hapDelegate;
+#else
+    void * hapDelegate;
+#endif
     
     CVOpenGLTextureCacheRef _videoTextureCache = nullptr;
     CVOpenGLTextureRef _videoTextureRef = nullptr;

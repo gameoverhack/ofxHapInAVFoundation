@@ -1,6 +1,9 @@
 #import "HapInAVFTestAppDelegate.h"
 #import <OpenGL/CGLMacro.h>
 
+#include <mach/mach_time.h>
+
+
 
 
 
@@ -21,7 +24,7 @@
 		nativeAVFOutput = nil;
 		hapTexture = nil;
 		hapOutput = nil;
-		
+        
 		CVReturn		err = CVOpenGLTextureCacheCreate(kCFAllocatorDefault,
 			NULL,
 			[texCacheContext CGLContextObj],
@@ -65,7 +68,7 @@
 	}
 	
 	//	i want to be the tab view's delegate, so i can respond to tab view changes (and tell the output to enable/disable RGB output)
-	[tabView setDelegate:self];
+	//[tabView setDelegate:self];
 }
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
 	
@@ -159,8 +162,8 @@
 			hapOutput = [[AVPlayerItemHapDXTOutput alloc] init];
 			[hapOutput setSuppressesPlayerRendering:YES];
 			//	if the user's displaying the the NSImage/CPU tab, we want this output to output as RGB
-			if ([tabView indexOfTabViewItem:[tabView selectedTabViewItem]]==1)
-				[hapOutput setOutputAsRGB:YES];
+			//if ([tabView indexOfTabViewItem:[tabView selectedTabViewItem]]==1)
+				// [hapOutput setOutputAsRGB:YES];
 		}
 		
 		//	unregister as an observer for the "old" item's play-to-end notifications
@@ -194,22 +197,32 @@
 	}
 }
 
-//	this is called when you change the tabs in the tab view
-- (void) tabView:(NSTabView *)tv didSelectTabViewItem:(NSTabViewItem *)item	{
-	NSInteger		selIndex = [tv indexOfTabViewItem:item];
-	//	if the user's displaying the the NSImage/CPU tab, we want this output to output as RGB
-	if (selIndex==1)
-		[hapOutput setOutputAsRGB:YES];
-	else
-		[hapOutput setOutputAsRGB:NO];
-}
+////	this is called when you change the tabs in the tab view
+//- (void) tabView:(NSTabView *)tv didSelectTabViewItem:(NSTabViewItem *)item	{
+//	NSInteger		selIndex = [tv indexOfTabViewItem:item];
+//	//	if the user's displaying the the NSImage/CPU tab, we want this output to output as RGB
+//	if (selIndex==1)
+//		[hapOutput setOutputAsRGB:YES];
+//	else
+//		[hapOutput setOutputAsRGB:NO];
+//}
 //	this is called by the displaylink's C callback- this drives rendering
 - (void) renderCallback	{
 	@synchronized (self)	{
 		//	try to get a hap decoder frame- it returns a nil quickly if the player it's attached to doesn't have a hap track.
-		HapDecoderFrame			*dxtFrame = [hapOutput allocFrameClosestToTime:[hapOutput itemTimeForMachAbsoluteTime:mach_absolute_time()]];
+        
+        CMTime machAbsoluteTime = [hapOutput itemTimeForMachAbsoluteTime:mach_absolute_time()];
+        
+        //NSLog(@"mach time = %lld", machAbsoluteTime.value);
+        
+        HapDecoderFrame	*dxtFrame = [hapOutput allocFrameClosestToTime:machAbsoluteTime];
+        
+//        if(hapOutput != nil){
+//            NSLog(@"yepp");
+//        }
         
 		if (dxtFrame!=nil)	{
+            NSLog(@"dxtFrame is not nil");
 			//	if there's no hap texture, make one
 			if (hapTexture==nil)	{
 				CGLContextObj		newCtx = NULL;
@@ -227,78 +240,85 @@
 			NSSize					imgSize = [dxtFrame imgSize];
 			NSSize					dxtImgSize = [dxtFrame dxtImgSize];
 			if (hapTexture!=nil)	{
+                NSLog(@"hapTexture is not nil");
 				//	pass the decoded frame to the hap texture
 				[hapTexture setDecodedFrame:dxtFrame];
-				//	draw the texture in the GL view
-				NSSize					dxtTexSize;
-				// On NVIDIA hardware there is a massive slowdown if DXT textures aren't POT-dimensioned, so we use POT-dimensioned backing
-				//	NOTE: NEEDS TESTING. this used to be the case- but this API is only available on 10.10+, so this may have been fixed.
-				int						tmpInt;
-				tmpInt = 1;
-				while (tmpInt < dxtImgSize.width)
-					tmpInt = tmpInt<<1;
-				dxtTexSize.width = tmpInt;
-				tmpInt = 1;
-				while (tmpInt < dxtImgSize.height)
-					tmpInt = tmpInt<<1;
-				dxtTexSize.height = tmpInt;
-
-				if ([hapTexture textureCount]>1)	{
-					[glView
-						drawTexture:[hapTexture textureNames][0]
-						target:GL_TEXTURE_2D
-						alphaTexture:[hapTexture textureNames][1]
-						alphaTarget:GL_TEXTURE_2D
-						imageSize:imgSize
-						textureSize:dxtTexSize
-						flipped:YES
-						usingShader:[hapTexture shaderProgramObject]];
-				}
-				else	{
-					[glView
-						drawTexture:[hapTexture textureNames][0]
-						target:GL_TEXTURE_2D
-						imageSize:imgSize
-						textureSize:dxtTexSize
-						flipped:YES
-						usingShader:[hapTexture shaderProgramObject]];
-				}
+              
+                // Check if the `hapSampleBuffer` was set during `setDecodedFrame`.
+                if (hapTexture.decodedFrame.hapSampleBuffer == nil) {
+                    NSLog(@"hapTexture.decodedFrame.hapSampleBuffer is nil!");
+                }
+                
+//				//	draw the texture in the GL view
+//				NSSize					dxtTexSize;
+//				// On NVIDIA hardware there is a massive slowdown if DXT textures aren't POT-dimensioned, so we use POT-dimensioned backing
+//				//	NOTE: NEEDS TESTING. this used to be the case- but this API is only available on 10.10+, so this may have been fixed.
+//				int						tmpInt;
+//				tmpInt = 1;
+//				while (tmpInt < dxtImgSize.width)
+//					tmpInt = tmpInt<<1;
+//				dxtTexSize.width = tmpInt;
+//				tmpInt = 1;
+//				while (tmpInt < dxtImgSize.height)
+//					tmpInt = tmpInt<<1;
+//				dxtTexSize.height = tmpInt;
+//
+//				if ([hapTexture textureCount]>1)	{
+//					[glView
+//						drawTexture:[hapTexture textureNames][0]
+//						target:GL_TEXTURE_2D
+//						alphaTexture:[hapTexture textureNames][1]
+//						alphaTarget:GL_TEXTURE_2D
+//						imageSize:imgSize
+//						textureSize:dxtTexSize
+//						flipped:YES
+//						usingShader:[hapTexture shaderProgramObject]];
+//				}
+//				else	{
+//					[glView
+//						drawTexture:[hapTexture textureNames][0]
+//						target:GL_TEXTURE_2D
+//						imageSize:imgSize
+//						textureSize:dxtTexSize
+//						flipped:YES
+//						usingShader:[hapTexture shaderProgramObject]];
+//				}
 			}
 			
 			//	if the frame has RGB data attached to it, make an NSBitmapImageRep & NSImage from the data, then draw it in the NSImageView
-			void				*rgbData = [dxtFrame rgbData];
-			size_t				rgbDataSize = [dxtFrame rgbDataSize];
-			if (rgbData==nil)	{
-				//NSLog(@"\t\terr: rgb data nil in %s",__func__);
-			}
-			else	{
-				NSBitmapImageRep	*bitmapRep = [[NSBitmapImageRep alloc]
-					initWithBitmapDataPlanes:NULL
-					pixelsWide:(NSUInteger)imgSize.width
-					pixelsHigh:(NSUInteger)imgSize.height
-					bitsPerSample:8
-					samplesPerPixel:4
-					hasAlpha:YES
-					isPlanar:NO
-					colorSpaceName:NSCalibratedRGBColorSpace
-					bitmapFormat:0
-					bytesPerRow:rgbDataSize/(NSUInteger)imgSize.height
-					bitsPerPixel:32];
-				if (bitmapRep==nil)
-					NSLog(@"\t\terr: bitmap rep nil, %s",__func__);
-				else	{
-					memcpy([bitmapRep bitmapData], rgbData, rgbDataSize);
-					NSImage				*newImg = [[NSImage alloc] initWithSize:imgSize];
-					[newImg addRepresentation:bitmapRep];
-					//	draw the NSImage in the view
-					[imgView setImage:newImg];
-					
-					[newImg release];
-					newImg = nil;
-					[bitmapRep release];
-					bitmapRep = nil;
-				}
-			}
+//			void				*rgbData = [dxtFrame rgbData];
+//			size_t				rgbDataSize = [dxtFrame rgbDataSize];
+//			if (rgbData==nil)	{
+//				//NSLog(@"\t\terr: rgb data nil in %s",__func__);
+//			}
+//			else	{
+//				NSBitmapImageRep	*bitmapRep = [[NSBitmapImageRep alloc]
+//					initWithBitmapDataPlanes:NULL
+//					pixelsWide:(NSUInteger)imgSize.width
+//					pixelsHigh:(NSUInteger)imgSize.height
+//					bitsPerSample:8
+//					samplesPerPixel:4
+//					hasAlpha:YES
+//					isPlanar:NO
+//					colorSpaceName:NSCalibratedRGBColorSpace
+//					bitmapFormat:0
+//					bytesPerRow:rgbDataSize/(NSUInteger)imgSize.height
+//					bitsPerPixel:32];
+//				if (bitmapRep==nil)
+//					NSLog(@"\t\terr: bitmap rep nil, %s",__func__);
+//				else	{
+//					memcpy([bitmapRep bitmapData], rgbData, rgbDataSize);
+//					NSImage				*newImg = [[NSImage alloc] initWithSize:imgSize];
+//					[newImg addRepresentation:bitmapRep];
+//					//	draw the NSImage in the view
+//					[imgView setImage:newImg];
+//					
+//					[newImg release];
+//					newImg = nil;
+//					[bitmapRep release];
+//					bitmapRep = nil;
+//				}
+//			}
 			
 			[dxtFrame release];
 		}
@@ -311,7 +331,7 @@
 				NSLog(@"\t\tERR: unable to copy pixel buffer from nativeAVFOutput");
 			else	{
 				//	if we want to use opengl to display the buffer...
-				if ([tabView indexOfTabViewItem:[tabView selectedTabViewItem]]==0)	{
+				//if ([tabView indexOfTabViewItem:[tabView selectedTabViewItem]]==0)	{
 					//	make a CV GL texture from the pixel buffer
 					CVOpenGLTextureRef		newTex = NULL;
 					CVReturn				err = CVOpenGLTextureCacheCreateTextureFromImage(kCFAllocatorDefault,
@@ -331,50 +351,50 @@
 					}
 					else
 						NSLog(@"\t\terr %d at CVOpenGLTextureCacheCreateTextureFromImage()",err);
-				}
-				//	else we want to use NSImage to display the buffer...
-				else	{
-					size_t				pbBytesPerRow = CVPixelBufferGetBytesPerRow(pb);
-					NSSize				imgSize = NSMakeSize(CVPixelBufferGetWidth(pb), CVPixelBufferGetHeight(pb));
-					NSBitmapImageRep	*bitmapRep = [[NSBitmapImageRep alloc]
-						initWithBitmapDataPlanes:NULL
-						pixelsWide:(NSUInteger)imgSize.width
-						pixelsHigh:(NSUInteger)imgSize.height
-						bitsPerSample:8
-						samplesPerPixel:4
-						hasAlpha:YES
-						isPlanar:NO
-						colorSpaceName:NSCalibratedRGBColorSpace
-						bitmapFormat:0
-						bytesPerRow:pbBytesPerRow
-						bitsPerPixel:32];
-					if (bitmapRep==nil)
-						NSLog(@"\t\terr: bitmap rep nil, %s",__func__);
-					else	{
-						CVPixelBufferLockBaseAddress(pb, kCVPixelBufferLock_ReadOnly);
-						size_t				bitmapBytesPerRow = [bitmapRep bytesPerRow];
-						size_t				minBytesPerRow = fminl(pbBytesPerRow, bitmapBytesPerRow);
-						void				*readAddr = CVPixelBufferGetBaseAddress(pb);
-						void				*writeAddr = [bitmapRep bitmapData];
-						for (int i=0; i<imgSize.height; ++i)	{
-							memcpy(writeAddr, readAddr, minBytesPerRow);
-							writeAddr += bitmapBytesPerRow;
-							readAddr += pbBytesPerRow;
-						}
-						CVPixelBufferUnlockBaseAddress(pb, kCVPixelBufferLock_ReadOnly);
-						
-						NSImage				*newImg = [[NSImage alloc] initWithSize:imgSize];
-						[newImg addRepresentation:bitmapRep];
-						//	draw the NSImage in the view
-						[imgView setImage:newImg];
-					
-						[newImg release];
-						newImg = nil;
-						[bitmapRep release];
-						bitmapRep = nil;
-					}
-					
-				}
+				//}
+//				//	else we want to use NSImage to display the buffer...
+//				else	{
+//					size_t				pbBytesPerRow = CVPixelBufferGetBytesPerRow(pb);
+//					NSSize				imgSize = NSMakeSize(CVPixelBufferGetWidth(pb), CVPixelBufferGetHeight(pb));
+//					NSBitmapImageRep	*bitmapRep = [[NSBitmapImageRep alloc]
+//						initWithBitmapDataPlanes:NULL
+//						pixelsWide:(NSUInteger)imgSize.width
+//						pixelsHigh:(NSUInteger)imgSize.height
+//						bitsPerSample:8
+//						samplesPerPixel:4
+//						hasAlpha:YES
+//						isPlanar:NO
+//						colorSpaceName:NSCalibratedRGBColorSpace
+//						bitmapFormat:0
+//						bytesPerRow:pbBytesPerRow
+//						bitsPerPixel:32];
+//					if (bitmapRep==nil)
+//						NSLog(@"\t\terr: bitmap rep nil, %s",__func__);
+//					else	{
+//						CVPixelBufferLockBaseAddress(pb, kCVPixelBufferLock_ReadOnly);
+//						size_t				bitmapBytesPerRow = [bitmapRep bytesPerRow];
+//						size_t				minBytesPerRow = fminl(pbBytesPerRow, bitmapBytesPerRow);
+//						void				*readAddr = CVPixelBufferGetBaseAddress(pb);
+//						void				*writeAddr = [bitmapRep bitmapData];
+//						for (int i=0; i<imgSize.height; ++i)	{
+//							memcpy(writeAddr, readAddr, minBytesPerRow);
+//							writeAddr += bitmapBytesPerRow;
+//							readAddr += pbBytesPerRow;
+//						}
+//						CVPixelBufferUnlockBaseAddress(pb, kCVPixelBufferLock_ReadOnly);
+//						
+//						NSImage				*newImg = [[NSImage alloc] initWithSize:imgSize];
+//						[newImg addRepresentation:bitmapRep];
+//						//	draw the NSImage in the view
+//						[imgView setImage:newImg];
+//					
+//						[newImg release];
+//						newImg = nil;
+//						[bitmapRep release];
+//						bitmapRep = nil;
+//					}
+//					
+//				}
             
 				CVPixelBufferRelease(pb);
 			}
@@ -386,6 +406,7 @@
 	}
 	
 }
+
 - (void) itemDidPlayToEnd:(NSNotification *)note	{
 	@synchronized (self)	{
 		[player seekToTime:kCMTimeZero];
@@ -414,7 +435,36 @@
 
 //-------------------------------------------------------------- Josh
 - (CVImageBufferRef)getCurrentFrame {
-    return hapTexture;
+    CMSampleBufferRef hapSampleBuffer = hapTexture.decodedFrame.hapSampleBuffer;
+    
+    if (hapSampleBuffer == nil) {
+        NSLog(@"hapTexture.decodedFrame.hapSampleBuffer is nil!");
+    }
+    
+    if (!CMSampleBufferIsValid(hapSampleBuffer)) {
+        NSLog(@"CMSampleBuffer is not valid");
+    }
+    
+    // Even though our hapSampleBuffer is *not* nil and *is* valid, this still returns nil????????
+    CVImageBufferRef imageBuffer = CMSampleBufferGetImageBuffer(hapSampleBuffer);
+    
+    // Lock the buffer
+    CVPixelBufferLockBaseAddress(imageBuffer, 0);
+    
+    if (imageBuffer == nil) {
+        NSLog(@"CVImageBufferRef created from hapTexture.decodedFrame.hapSampleBuffer is nil!");
+    }
+    
+    // unlock again
+    CVPixelBufferUnlockBaseAddress(imageBuffer, 0);
+    
+    return imageBuffer;
+}
+- (GLuint)getWidth {
+    return hapTexture.width;
+}
+- (GLuint)getHeight {
+    return hapTexture.height;
 }
 
 @end
