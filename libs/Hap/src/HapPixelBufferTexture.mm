@@ -80,6 +80,10 @@
 	[super dealloc];
 }
 
+- (void) setExternalTextureID:(GLuint) externTexID{
+    textures[0] = externTexID;
+}
+
 - (void) setDecodedFrame:(HapDecoderFrame *)newFrame	{
 	[newFrame retain];
 	
@@ -190,7 +194,7 @@
 			{
 				glDeleteTextures(1, &(textures[texIndex]));
 			}
-		
+            
 			glGenTextures(1, &(textures[texIndex]));
 		
 			glBindTexture(GL_TEXTURE_2D, textures[texIndex]);
@@ -239,8 +243,9 @@
 		glPopClientAttrib();
 		glPopAttrib();
         
-		glFlush();
+		//glFlush();
 	}
+    //CGLReleaseContext(cgl_ctx);
 }
 - (HapDecoderFrame *) decodedFrame	{
 	return decodedFrame;

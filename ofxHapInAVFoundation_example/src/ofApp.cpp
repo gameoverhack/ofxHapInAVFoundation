@@ -4,7 +4,7 @@
 void ofApp::setup(){
 
     hap.setup();
-    hap.load("/Users/josh/Desktop/Media/Kortex_VJ/BUTTS.mov");
+    hap.load("/Volumes/GhostDriver/Users/gameover/Code/hap-quicktime-playback-demo/HapQuickTimePlayback/SampleHap.mov");//"Volumes/GhostDriver/Users/gameover/Desktop/PsychoHAPTest.mov");
 }
 
 //--------------------------------------------------------------

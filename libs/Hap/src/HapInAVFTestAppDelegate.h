@@ -26,6 +26,7 @@
 	
 	HapPixelBufferTexture		*hapTexture;	//	this class uploads the DXT data in a decoded instance of HapDecoderFrame into a GL texture.  this is also where the shader that draws YCoCg DXT data as RGB is loaded.  this class was copied from the hap/quicktime sample app
 	AVPlayerItemHapDXTOutput	*hapOutput;	//	works similarly to "nativeAVFOutput"- it's a subclass of AVPlayerItemOutput, you add it to a player item and ask it for new frames (instances of HapDecoderFrame)
+    unsigned char* pixels;
 }
 
 - (void) loadFileAtPath:(NSString *)n;
@@ -38,6 +39,11 @@
 - (CVImageBufferRef)getCurrentFrame;
 - (GLuint)getWidth;
 - (GLuint)getHeight;
+
+// gameover
+- (HapPixelBufferTexture*)getHapTexture;
+- (void) setExternalRGB:(unsigned char*) externRGB;
+- (void) setExternalTextureID:(GLuint) externTexID;
 
 @end
 

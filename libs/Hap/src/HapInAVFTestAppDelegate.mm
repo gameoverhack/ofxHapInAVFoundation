@@ -163,7 +163,8 @@
 			[hapOutput setSuppressesPlayerRendering:YES];
 			//	if the user's displaying the the NSImage/CPU tab, we want this output to output as RGB
 			//if ([tabView indexOfTabViewItem:[tabView selectedTabViewItem]]==1)
-				// [hapOutput setOutputAsRGB:YES];
+            // gameover: you have to set this true if you want the pixels!!!
+				[hapOutput setOutputAsRGB:YES];
 		}
 		
 		//	unregister as an observer for the "old" item's play-to-end notifications
@@ -222,7 +223,7 @@
 //        }
         
 		if (dxtFrame!=nil)	{
-            NSLog(@"dxtFrame is not nil");
+            //NSLog(@"dxtFrame is not nil");
 			//	if there's no hap texture, make one
 			if (hapTexture==nil)	{
 				CGLContextObj		newCtx = NULL;
@@ -240,30 +241,31 @@
 			NSSize					imgSize = [dxtFrame imgSize];
 			NSSize					dxtImgSize = [dxtFrame dxtImgSize];
 			if (hapTexture!=nil)	{
-                NSLog(@"hapTexture is not nil");
+                //NSLog(@"hapTexture is not nil");
 				//	pass the decoded frame to the hap texture
 				[hapTexture setDecodedFrame:dxtFrame];
               
                 // Check if the `hapSampleBuffer` was set during `setDecodedFrame`.
                 if (hapTexture.decodedFrame.hapSampleBuffer == nil) {
-                    NSLog(@"hapTexture.decodedFrame.hapSampleBuffer is nil!");
+                    //NSLog(@"hapTexture.decodedFrame.hapSampleBuffer is nil!");
                 }
                 
-//				//	draw the texture in the GL view
-//				NSSize					dxtTexSize;
-//				// On NVIDIA hardware there is a massive slowdown if DXT textures aren't POT-dimensioned, so we use POT-dimensioned backing
-//				//	NOTE: NEEDS TESTING. this used to be the case- but this API is only available on 10.10+, so this may have been fixed.
-//				int						tmpInt;
-//				tmpInt = 1;
-//				while (tmpInt < dxtImgSize.width)
-//					tmpInt = tmpInt<<1;
-//				dxtTexSize.width = tmpInt;
-//				tmpInt = 1;
-//				while (tmpInt < dxtImgSize.height)
-//					tmpInt = tmpInt<<1;
-//				dxtTexSize.height = tmpInt;
-//
-//				if ([hapTexture textureCount]>1)	{
+				//	draw the texture in the GL view
+				NSSize					dxtTexSize;
+				// On NVIDIA hardware there is a massive slowdown if DXT textures aren't POT-dimensioned, so we use POT-dimensioned backing
+				//	NOTE: NEEDS TESTING. this used to be the case- but this API is only available on 10.10+, so this may have been fixed.
+				int						tmpInt;
+				tmpInt = 1;
+				while (tmpInt < dxtImgSize.width)
+					tmpInt = tmpInt<<1;
+				dxtTexSize.width = tmpInt;
+				tmpInt = 1;
+				while (tmpInt < dxtImgSize.height)
+					tmpInt = tmpInt<<1;
+				dxtTexSize.height = tmpInt;
+
+				if ([hapTexture textureCount]>1)	{
+                    //NSLog(@"hapTexture textureCount]>1");
 //					[glView
 //						drawTexture:[hapTexture textureNames][0]
 //						target:GL_TEXTURE_2D
@@ -273,8 +275,9 @@
 //						textureSize:dxtTexSize
 //						flipped:YES
 //						usingShader:[hapTexture shaderProgramObject]];
-//				}
-//				else	{
+				}
+				else	{
+                    //NSLog(@"hapTexture textureCount]<=1");
 //					[glView
 //						drawTexture:[hapTexture textureNames][0]
 //						target:GL_TEXTURE_2D
@@ -282,15 +285,20 @@
 //						textureSize:dxtTexSize
 //						flipped:YES
 //						usingShader:[hapTexture shaderProgramObject]];
-//				}
+				}
 			}
 			
 			//	if the frame has RGB data attached to it, make an NSBitmapImageRep & NSImage from the data, then draw it in the NSImageView
-//			void				*rgbData = [dxtFrame rgbData];
-//			size_t				rgbDataSize = [dxtFrame rgbDataSize];
-//			if (rgbData==nil)	{
-//				//NSLog(@"\t\terr: rgb data nil in %s",__func__);
-//			}
+			void				*rgbData = [dxtFrame rgbData];
+			size_t				rgbDataSize = [dxtFrame rgbDataSize];
+			if (rgbData==nil)	{
+				NSLog(@"\t\terr: rgb data nil in %s",__func__);
+            }else{
+                // gameover: this is kind of expensive but was a quick way to see if the rgbpixel data is available
+                // note that when i encoded a movie of my own as HAP it didn't have any pixel data - but when i used
+                // the Sample.mov from VIDVOX it worked - so perhaps it needs to be encoded as DXT or something?
+                if(pixels != nil) memcpy(pixels, rgbData, rgbDataSize);
+            }
 //			else	{
 //				NSBitmapImageRep	*bitmapRep = [[NSBitmapImageRep alloc]
 //					initWithBitmapDataPlanes:NULL
@@ -446,17 +454,18 @@
     }
     
     // Even though our hapSampleBuffer is *not* nil and *is* valid, this still returns nil????????
+    // gameover: this won't work because the hapSampleBuffer doesn't contain any RGB Image data - it just has a texture
     CVImageBufferRef imageBuffer = CMSampleBufferGetImageBuffer(hapSampleBuffer);
     
     // Lock the buffer
-    CVPixelBufferLockBaseAddress(imageBuffer, 0);
+    CVPixelBufferLockBaseAddress(imageBuffer, kCVPixelBufferLock_ReadOnly);
     
     if (imageBuffer == nil) {
         NSLog(@"CVImageBufferRef created from hapTexture.decodedFrame.hapSampleBuffer is nil!");
     }
     
     // unlock again
-    CVPixelBufferUnlockBaseAddress(imageBuffer, 0);
+    CVPixelBufferUnlockBaseAddress(imageBuffer, kCVPixelBufferLock_ReadOnly);
     
     return imageBuffer;
 }
@@ -466,7 +475,15 @@
 - (GLuint)getHeight {
     return hapTexture.height;
 }
-
+- (HapPixelBufferTexture*)getHapTexture{
+    return hapTexture;
+}
+- (void) setExternalTextureID:(GLuint) externTexID{
+    if(hapTexture != nil) [hapTexture setExternalTextureID:externTexID];
+}
+- (void) setExternalRGB:(unsigned char*) externRGB{
+    pixels = externRGB;
+}
 @end
 
 

@@ -54,6 +54,10 @@
     GLhandleARB      shader;
     GLhandleARB      alphaShader;
 }
+
+// gameover
+- (void) setExternalTextureID:(GLuint) externTexID;
+
 /**
  Returns a HapPixelBufferTexture to draw in the provided CGL context.
  */

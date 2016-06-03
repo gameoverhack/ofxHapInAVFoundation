@@ -27,6 +27,7 @@ public:
     float getHeight() const;
     
 private:
+    ofImage image;
     ofTexture videoTexture;
     
 #ifdef __OBJC__

@@ -17,6 +17,7 @@ void ofxHapInAVFoundation::setup(){
 
     hapDelegate = [[HapInAVFTestAppDelegate alloc] init];
     [hapDelegate awakeFromNib]; //-- Not sure if I need to call this here?
+
 }
 
 //----------------------------------------------------------
@@ -38,14 +39,56 @@ void ofxHapInAVFoundation::update(){
 void ofxHapInAVFoundation::draw(int x, int y, int w, int h) {
 
     //if(isLoaded() && isReady()) {
+    
+    HapPixelBufferTexture* hapTexture = [hapDelegate getHapTexture];
+    if(hapTexture == nil) return;
+    if(image.getWidth() != hapTexture.width || image.getHeight() != hapTexture.height){
+        ofLogNotice() << "allocate OF video texture: " << hapTexture.width << "  x  " << hapTexture.height;
+        //videoTexture.allocate(hapTexture.width, hapTexture.height, GL_RGBA);
+        image.allocate(hapTexture.width, hapTexture.height, OF_IMAGE_COLOR_ALPHA);
+        [hapDelegate setExternalRGB:image.getPixels().getData()];
         
-        ofTexture * texturePtr = getTexturePtr();
-        if( texturePtr != NULL ){
-            if( texturePtr->isAllocated() ){
-              //  cout << "hello? ? " << endl;
-                texturePtr->draw(x, y, w, h);
-            }
-        }
+        //videoTexture.texData.pixelType = GL_UNSIGNED_INT_8_8_8_8_REV;
+        
+    }
+
+    //[hapTexture setExternalTextureID:videoTexture.getTextureData().textureID];
+    
+    // gameover: so something like this should work but at the moment i just get a white texture
+    // this is either because I'm not sharing the context properly, not using a shader or possibly
+    // because the GL texture decoding is not working totaly right on the HAP side of things - I say this
+    // because when I run their demo app it's not working correctly - something is wrong with the sizes
+
+    
+//    videoTexture.setUseExternalTextureID([hapTexture textureNames][0]);
+//    videoTexture.texData.textureTarget = GL_TEXTURE_2D;
+//    videoTexture.texData.width = hapTexture.width;
+//    videoTexture.texData.height = hapTexture.height;
+//    videoTexture.texData.tex_w = hapTexture.width;
+//    videoTexture.texData.tex_h = hapTexture.height;
+//    videoTexture.texData.tex_t = hapTexture.width;
+//    videoTexture.texData.tex_u = hapTexture.height;
+//    videoTexture.texData.glInternalFormat = GL_BGRA;
+//    videoTexture.texData.bFlipTexture = YES;
+//    videoTexture.texData.bAllocated = YES;
+//    videoTexture.setTextureMinMagFilter(GL_LINEAR, GL_LINEAR);
+//    videoTexture.setTextureWrap(GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+//    videoTexture.bind();
+
+//    if(ofIsGLProgrammableRenderer() == false) {
+//        videoTexture.bind();
+//        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+//        videoTexture.unbind();
+//    }
+    image.update();
+    image.draw(x, y, w, h);
+//        ofTexture * texturePtr = getTexturePtr();
+//        if( texturePtr != NULL ){
+//            if( texturePtr->isAllocated() ){
+//              //  cout << "hello? ? " << endl;
+//                texturePtr->draw(x, y, w, h);
+//            }
+//        }
    //}
 }
 
